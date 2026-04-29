@@ -481,7 +481,7 @@ namespace UnityEditor.DanbaidongGUI
 
         public override void OnGUI(Rect rect, MaterialProperty prop, GUIContent label, MaterialEditor editor)
         {
-            if (prop.type != MaterialProperty.PropType.Range)
+            if (prop.propertyType != UnityEngine.Rendering.ShaderPropertyType.Range)
             {
                 Debug.LogError("Property " + prop.name + " type should be \"Range\" ");
                 return;

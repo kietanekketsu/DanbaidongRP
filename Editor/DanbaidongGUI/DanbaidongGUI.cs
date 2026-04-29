@@ -59,7 +59,7 @@ namespace UnityEditor.DanbaidongGUI
             {
                 advProps[i] = new AdvancedMatProperty();
                 advProps[i].prop = props[i];
-                advProps[i].hideInInspector = (props[i].flags & MaterialProperty.PropFlags.HideInInspector) != 0;
+                advProps[i].hideInInspector = (props[i].propertyFlags & UnityEngine.Rendering.ShaderPropertyFlags.HideInInspector) != 0;
             }
 
             // Properties GUI
