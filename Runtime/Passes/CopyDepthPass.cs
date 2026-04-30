@@ -108,6 +108,7 @@ namespace UnityEngine.Rendering.Universal.Internal
         private class PassData
         {
             internal TextureHandle source;
+            internal TextureHandle destination;
             internal UniversalCameraData cameraData;
             internal Material copyDepthMaterial;
             internal int msaaSamples;
@@ -274,8 +275,31 @@ namespace UnityEngine.Rendering.Universal.Internal
 #if UNITY_EDITOR
                     // binding a dummy color target as a workaround to an OSX issue in Editor scene view (UUM-47698).
                     // Also required for preview camera rendering for grid drawn with builtin RP (UUM-55171).
-                    if (cameraData.isSceneViewCamera || cameraData.isPreviewCamera)
-                        builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                    // Also required for render gizmos (UUM-91335).
+                    // When MSAA is enabled with DBuffer, active color and DBuffer depth can have different sample counts (UUM-131330).
+                    if (cameraData.isSceneViewCamera || cameraData.isPreviewCamera || UnityEditor.Handles.ShouldRenderGizmos())
+                    {
+                        var activeColorInfo = renderGraph.GetRenderTargetInfo(resourceData.activeColorTexture);
+                        var destInfo = renderGraph.GetRenderTargetInfo(destination);
+
+                        if (activeColorInfo.msaaSamples != destInfo.msaaSamples)
+                        {
+                            TextureHandle dummyColor = renderGraph.CreateTexture(new TextureDesc(activeColorInfo.width, activeColorInfo.height, false, true)
+                            {
+                                name = "Copy Depth Editor Dummy Color",
+                                slices = activeColorInfo.volumeDepth,
+                                format = activeColorInfo.format,
+                                msaaSamples = (MSAASamples)destInfo.msaaSamples,
+                                clearBuffer = false,
+                                bindTextureMS = activeColorInfo.bindMS
+                            });
+                            builder.SetRenderAttachment(dummyColor, 0);
+                        }
+                        else
+                        {
+                            builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                        }
+                    }
 #endif
                 }
                 else if (CopyToDepthXR)
@@ -297,6 +321,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                 }
 
                 passData.source = source;
+                passData.destination = destination;
                 builder.UseTexture(source, AccessFlags.Read);
 
                 if (bindAsCameraDepth && destination.IsValid())

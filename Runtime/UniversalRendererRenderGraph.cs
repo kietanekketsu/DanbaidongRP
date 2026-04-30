@@ -1595,6 +1595,10 @@ namespace UnityEngine.Rendering.Universal
                 needsOccluderUpdate = false;
             }
 
+            // DBuffer projector shaders sample _CameraDepthTexture during AfterRenderingPrePasses.
+            // DanbaidongRP schedules motion vectors later with additional resources, so only copy depth here.
+            if (copySchedules.depth == DepthCopySchedule.AfterPrepass)
+                CopyDepthToDepthTexture(renderGraph, resourceData);
 
             RecordCustomRenderGraphPasses(renderGraph, RenderPassEvent.AfterRenderingPrePasses);
 
