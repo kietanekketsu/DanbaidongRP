@@ -46,6 +46,9 @@ namespace UnityEngine.Rendering.Universal
             var scriptableRenderPassInput = ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Normal;
             ConfigureInput(scriptableRenderPassInput);
 
+            // DBuffer requires color texture created as it does not handle y flip correctly
+            requiresIntermediateTexture = true;
+
             m_DrawSystem = drawSystem;
             m_Settings = settings;
             m_DBufferClear = dBufferClear;
@@ -234,6 +237,7 @@ namespace UnityEngine.Rendering.Universal
             TextureHandle cameraNormalsTexture = resourceData.cameraNormalsTexture;
 
             TextureHandle depthTarget = resourceData.dBufferDepth.IsValid() ? resourceData.dBufferDepth : resourceData.activeDepthTexture;
+            TextureHandle renderingLayersTexture = resourceData.renderingLayersTexture;
 
             using (var builder = renderGraph.AddRasterRenderPass<PassData>(passName, out var passData, profilingSampler))
             {
@@ -278,8 +282,8 @@ namespace UnityEngine.Rendering.Universal
                     builder.UseTexture(cameraDepthTexture, AccessFlags.Read);
                 if (cameraNormalsTexture.IsValid())
                     builder.UseTexture(cameraNormalsTexture, AccessFlags.Read);
-                if (passData.decalLayers)
-                    builder.UseTexture(resourceData.renderingLayersTexture, AccessFlags.Read);
+                if (passData.decalLayers && renderingLayersTexture.IsValid())
+                    builder.UseTexture(renderingLayersTexture, AccessFlags.Read);
 
                 if (resourceData.ssaoTexture.IsValid())
                     builder.UseGlobalTexture(s_SSAOTextureID);
